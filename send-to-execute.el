@@ -96,5 +96,6 @@ Return the results of all forms as a list."
   (send-to-execute "electron"))
 
 
-(global-set-key (kbd "C-c e e") 'send-to-electron)
-(global-set-key (kbd "C-c e n") 'send-to-node)
+(global-set-key (kbd "C-c s e") 'send-to-execute)
+(global-set-key (kbd "C-c s t") 'send-to-electron)
+(global-set-key (kbd "C-c s n") 'send-to-node)

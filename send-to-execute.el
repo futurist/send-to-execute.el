@@ -17,16 +17,31 @@
 ;; make temp-mode-map for each popup buffer
 (require 'temp-mode (expand-file-name "./temp-mode.el"))
 
+;; eval input string as args list
+;; http://emacs.stackexchange.com/questions/19877/how-to-evaluate-elisp-code-contained-in-a-string
+(defun send-to-execute-eval-string (str)
+  "Read and evaluate all forms in str.
+Return the results of all forms as a list."
+  (let ((next 0)
+        ret)
+    (condition-case err
+        (while t
+          (setq ret (cons (funcall (lambda (ret)
+                                     (setq next (cdr ret))
+                                     (eval (car ret)))
+                                   (read-from-string str next))
+                          ret)))
+      (end-of-file))
+    (nreverse ret)))
+
 ;;;###autoload
 (defun send-to-execute (&optional execute console-p &rest args)
   "EXECUTE string of command with current buffer or region."
   (interactive (list (read-from-minibuffer "Program to execute: ")
                      current-prefix-arg
-                     (eval
-                      (car (read-from-string
-                            (format "(list %s)"
-                                    (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\"")))))))
-  (message "%s------" args)
+                     (send-to-execute-eval-string (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\""))))
+  (when (and args (called-interactively-p))
+    (setq args (car args)))
   (let* ((buffer-name (buffer-file-name))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
          (command-args (if args

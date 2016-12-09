@@ -1,7 +1,7 @@
 ;;; send-to-execute.el --- Send buffer or region to execute with temp file -*- lexical-binding: t; -*-
 
 ;; Filename: send-to-execute.el
-;; Description:
+;; Description: Send buffer or region to execute with temp file, popup result and easily dismiss.
 ;; Author: James Yang <jamesyang999@gmail.com>
 ;; Copyright (C) 2016, James Yang, all rights reserved.
 ;; Time-stamp: <2016-12-09 17:37:51 James Yang>
@@ -14,7 +14,8 @@
 
 ;;; This file is NOT part of GNU Emacs
 
-
+;; make temp-mode-map for each popup buffer
+(require 'temp-mode (expand-file-name "./temp-mode.el"))
 
 ;;;###autoload
 (defun send-to-execute (&optional execute args console-p keep-output-p)
@@ -67,5 +68,5 @@
   (send-to-execute "electron"))
 
 
-(global-set-key "C-c e e" 'send-to-electron)
-(global-set-key "C-c e n" 'send-to-node)
+(global-set-key (kbd "C-c e e") 'send-to-electron)
+(global-set-key (kbd "C-c e n") 'send-to-node)

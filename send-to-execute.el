@@ -18,34 +18,33 @@
 (require 'temp-mode (expand-file-name "./temp-mode.el"))
 
 ;;;###autoload
-(defun send-to-execute (&optional execute args console-p keep-output-p)
+(defun send-to-execute (&optional execute console-p &rest args)
   "EXECUTE string of command with current buffer or region."
   (let* ((buffer-name (buffer-file-name))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
-         (command-args (if args (replace-regexp-in-string "\\[FILENAME\\]" file args) file))
-         (keep (not (null keep-output-p)))
+         (command-args (if args
+                           (mapcar '(lambda(item)
+                                      (if (stringp item)
+                                          (replace-regexp-in-string "\\[FILENAME\\]" file item t)
+                                        (if (numberp item) (number-to-string item)
+                                          (error "arguments must be string or number."))))
+                                   args)
+                         (list file)))
          (start (if (use-region-p) (region-beginning) (point-min)))
          (end (if (use-region-p) (region-end) (point-max)))
          proc name buffer)
     (when console-p
       (setq command-args (if execute
-                             (format "/k %s %s" execute command-args)
-                           ;; empty command when no execute
-                           (format "/k")))
+                             (append (list "/k" execute) command-args)))
       (setq execute "cmd"))
     (write-region start end file)
     (setq name (concat "*" execute (format-time-string "@%H:%M:%S") "*"))
     (setq buffer (create-file-buffer name))
     (pop-to-buffer buffer)
     (insert "generated below temp file for execute:\n" file "\n\n")
-    (setq proc (start-process name buffer
-                              (or execute "cmd")
-                              command-args))
-    (set-process-sentinel proc `(lambda (proc event)
-                                  (when (and (not ,keep) (member (process-status proc) '(exit signal)))
-                                    (when (get-buffer ,name) (kill-buffer ,name))
-                                    (delete-file ,file)
-                                    (winner-undo))))
+    (setq proc (apply #'start-process name buffer
+                      (or execute "cmd")
+                      command-args))
     (temp-mode 1)
     ;; without ask kill process on exit
     (set-process-query-on-exit-flag proc nil)
@@ -53,15 +52,16 @@
     (define-key temp-mode-map (kbd "C-o") `(lambda() (interactive)
                                              (find-file ,file)))
     ;; C-d quickly close the buffer
-    (define-key temp-mode-map (kbd "C-d") '(lambda() (interactive)
+    (define-key temp-mode-map (kbd "C-d") `(lambda() (interactive)
                                              (kill-this-buffer)
+                                             (delete-file ,file)
                                              (winner-undo)))
     ;; return temp file name
     file))
 
 (defun send-to-node (keep)
   (interactive "P")
-  (send-to-execute "node" nil t t))
+  (send-to-execute "node"))
 
 (defun send-to-electron (keep)
   (interactive "P")

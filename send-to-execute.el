@@ -22,7 +22,11 @@
   "EXECUTE string of command with current buffer or region."
   (interactive (list (read-from-minibuffer "Program to execute: ")
                      current-prefix-arg
-                     (read-string "Arguments (use `[FILE]` as placeholder): " nil nil "[FILE]")))
+                     (eval
+                      (car (read-from-string
+                            (format "(list %s)"
+                                    (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\"")))))))
+  (message "%s------" args)
   (let* ((buffer-name (buffer-file-name))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
          (command-args (if args

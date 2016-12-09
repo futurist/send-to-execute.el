@@ -20,30 +20,39 @@
 ;;;###autoload
 (defun send-to-execute (&optional execute console-p &rest args)
   "EXECUTE string of command with current buffer or region."
+  (interactive (list (read-from-minibuffer "Program to execute: ")
+                     current-prefix-arg
+                     (read-string "Arguments (use `[FILE]` as placeholder): " nil nil "[FILE]")))
   (let* ((buffer-name (buffer-file-name))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
          (command-args (if args
                            (mapcar '(lambda(item)
                                       (if (stringp item)
-                                          (replace-regexp-in-string "\\[FILENAME\\]" file item t)
+                                          (replace-regexp-in-string "\\[FILE\\]" file item t)
                                         (if (numberp item) (number-to-string item)
                                           (error "arguments must be string or number."))))
                                    args)
                          (list file)))
          (start (if (use-region-p) (region-beginning) (point-min)))
          (end (if (use-region-p) (region-end) (point-max)))
+         ;; make proc execute under the temp path
+         (default-directory (file-name-directory file))
          proc name buffer)
     (when console-p
       (setq command-args (if execute
                              (append (list "/k" execute) command-args)))
       (setq execute "cmd"))
+    ;; when execute is nil
+    (when (or (null execute) (string-empty-p execute))
+      (setq execute "cmd"))
     (write-region start end file)
     (setq name (concat "*" execute (format-time-string "@%H:%M:%S") "*"))
     (setq buffer (create-file-buffer name))
     (pop-to-buffer buffer)
-    (insert "generated below temp file for execute:\n" file "\n\n")
+    (insert (format "generated below temp file for execute:\n%s" file))
+    (insert (format "\n\nCommand line is:\n%s %s\n\n" execute command-args))
     (setq proc (apply #'start-process name buffer
-                      (or execute "cmd")
+                      execute
                       command-args))
     (temp-mode 1)
     ;; without ask kill process on exit

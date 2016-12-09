@@ -45,7 +45,7 @@ Return the results of all forms as a list."
   (let* ((buffer-name (buffer-file-name))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
          (command-args (if args
-                           (mapcar '(lambda(item)
+                           (mapcar #'(lambda(item)
                                       (if (stringp item)
                                           (replace-regexp-in-string "\\[FILE\\]" file item t)
                                         (if (numberp item) (number-to-string item)
@@ -62,7 +62,7 @@ Return the results of all forms as a list."
                              (append (list "/k" execute) command-args)))
       (setq execute "cmd"))
     ;; when execute is nil
-    (when (or (null execute) (string-empty-p execute))
+    (when (or (null execute) (equal execute ""))
       (setq execute "cmd"))
     (write-region start end file)
     (setq name (concat "*" execute (format-time-string "@%H:%M:%S") "*"))

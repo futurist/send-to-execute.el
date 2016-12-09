@@ -87,12 +87,12 @@ Return the results of all forms as a list."
     ;; return temp file name
     file))
 
-(defun send-to-node (keep)
-  (interactive "P")
+(defun send-to-node ()
+  (interactive)
   (send-to-execute "node"))
 
-(defun send-to-electron (keep)
-  (interactive "P")
+(defun send-to-electron ()
+  (interactive)
   (send-to-execute "electron"))
 
 

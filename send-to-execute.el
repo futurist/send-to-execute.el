@@ -60,6 +60,7 @@ Return the results of all forms as a list."
                          (list file)))
          (start (if (use-region-p) (region-beginning) (point-min)))
          (end (if (use-region-p) (region-end) (point-max)))
+         (content (buffer-substring start end))
          ;; make proc execute under the temp path
          (default-directory (file-name-directory file))
          proc name buffer)
@@ -68,21 +69,17 @@ Return the results of all forms as a list."
                              (append (list "/k" execute) command-args)))
       (setq execute "cmd"))
     ;; when execute is nil
-    (when (or (null execute) (equal execute ""))
-      (setq execute "cmd"))
-    (write-region start end file)
+    (when (or (not (stringp execute)) (equal execute ""))
+      (setq execute nil))
+    (write-region content nil file)
     (setq name (concat "*" execute "@"
                        (file-name-nondirectory file) "*"))
     (setq buffer (create-file-buffer name))
     (pop-to-buffer buffer)
     (insert (format "generated below temp file for execute:\n%s" file))
     (insert (format "\n\nCommand line is:\n%s %s\n\n" execute command-args))
-    (setq proc (apply #'start-process name buffer
-                      execute
-                      command-args))
+        ;; to make sparse key map
     (temp-mode 1)
-    ;; without ask kill process on exit
-    (set-process-query-on-exit-flag proc nil)
     ;; Open the temp file in new buffer
     (define-key temp-mode-map (kbd "C-o") `(lambda() (interactive)
                                              (find-file ,file)))
@@ -91,6 +88,14 @@ Return the results of all forms as a list."
                                              (kill-this-buffer)
                                              (delete-file ,file)
                                              (winner-undo)))
+    (if (not execute)
+        (insert "file contents:\n\n" content)
+      ;; only when execute non-nil, start the process
+      (setq proc (apply #'start-process name buffer
+                        execute
+                        command-args))
+      ;; without ask kill process on exit
+      (set-process-query-on-exit-flag proc nil))
     ;; return temp file name
     file))
 

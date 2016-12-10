@@ -15,7 +15,10 @@
 ;;; This file is NOT part of GNU Emacs
 
 ;; make temp-mode-map for each popup buffer
-(require 'temp-mode (expand-file-name "./temp-mode.el"))
+(load "temp-mode.el")
+
+(defvar send-to-execute-default-dir temporary-file-directory
+  "The default directory to store temporary files. Initially set to `temporary-file-directory'")
 
 ;; eval input string as args list
 ;; http://emacs.stackexchange.com/questions/19877/how-to-evaluate-elisp-code-contained-in-a-string
@@ -35,14 +38,17 @@ Return the results of all forms as a list."
     (nreverse ret)))
 
 ;;;###autoload
-(defun send-to-execute (&optional execute console-p &rest args)
+(defun send-to-execute (&optional execute console-p use-default-dir &rest args)
   "EXECUTE string of command with current buffer or region."
   (interactive (list (read-from-minibuffer "Program to execute: ")
-                     current-prefix-arg
+                     nil current-prefix-arg
                      (send-to-execute-eval-string (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\""))))
   (when (and args (called-interactively-p))
     (setq args (car args)))
   (let* ((buffer-name (buffer-file-name))
+         (temporary-file-directory (if (or use-default-dir (not (buffer-file-name)))
+                                       send-to-execute-default-dir
+                                     (file-name-directory (buffer-file-name))))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
          (command-args (if args
                            (mapcar #'(lambda(item)
@@ -88,15 +94,17 @@ Return the results of all forms as a list."
     ;; return temp file name
     file))
 
-(defun send-to-node ()
-  (interactive)
-  (send-to-execute "node"))
+(defun send-to-node (use-default-dir)
+  (interactive "P")
+  (send-to-execute "node" nil use-default-dir))
 
-(defun send-to-electron ()
-  (interactive)
-  (send-to-execute "electron"))
+(defun send-to-electron (use-default-dir)
+  (interactive "P")
+  (send-to-execute "electron" nil use-default-dir))
 
+(global-set-key (kbd "C-c C-b e") 'send-to-execute)
+(global-set-key (kbd "C-c C-b l") 'send-to-electron)
+(global-set-key (kbd "C-c C-b n") 'send-to-node)
 
-(global-set-key (kbd "C-c s e") 'send-to-execute)
-(global-set-key (kbd "C-c s t") 'send-to-electron)
-(global-set-key (kbd "C-c s n") 'send-to-node)
+(provide 'send-to-execute)
+;;; send-to-execute.el ends here

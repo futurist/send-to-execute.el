@@ -16,6 +16,5 @@
   :lighter " Temp"
   temp-mode-map)
 
-(message "Temp mode---------")
-
 (provide 'temp-mode)
+;; temp-mode.el ends here

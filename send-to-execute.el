@@ -14,16 +14,29 @@
 
 ;;; This file is NOT part of GNU Emacs
 
+;;; Commentary:
+
+;; Send buffer or region to execute with temp file, Write it into
+;; `send-to-execute-default-dir' if USE-DEFAULT-DIR or no buffer-file,
+;; else write to same dir as buffer-file.  Popup result buffer, using
+;; "execute@temp-file-name" as name.
+
+;; Within the buffer, C-d to kill the buffer and delete the temp file,
+;; C-o to open the temp file.
+
+;;; Code:
+
 ;; make temp-mode-map for each popup buffer
-(load "temp-mode.el")
+(load (expand-file-name "temp-mode.el"))
 
 (defvar send-to-execute-default-dir temporary-file-directory
-  "The default directory to store temporary files. Initially set to `temporary-file-directory'")
+  "The default directory to store temporary files.
+Initially set to `temporary-file-directory'")
 
 ;; eval input string as args list
 ;; http://emacs.stackexchange.com/questions/19877/how-to-evaluate-elisp-code-contained-in-a-string
 (defun send-to-execute-eval-string (str)
-  "Read and evaluate all forms in str.
+  "Read and evaluate all forms in STR.
 Return the results of all forms as a list."
   (let ((next 0)
         ret)
@@ -39,11 +52,15 @@ Return the results of all forms as a list."
 
 ;;;###autoload
 (defun send-to-execute (&optional execute console-p use-default-dir &rest args)
-  "EXECUTE string of command with current buffer or region."
+  "EXECUTE command by insert current buffer or region into temp file.
+Non-nil CONSOLE-P to run within console.
+Write it into `send-to-execute-default-dir' if USE-DEFAULT-DIR
+or no buffer-file, else write to same dir as buffer-file.
+ARGS will passed to EXECUTE."
   (interactive (list (read-from-minibuffer "Program to execute: ")
                      nil current-prefix-arg
                      (send-to-execute-eval-string (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\""))))
-  (when (and args (called-interactively-p))
+  (when (and args (called-interactively-p 'any))
     (setq args (car args)))
   (let* ((buffer-name (buffer-file-name))
          (temporary-file-directory (if (or use-default-dir (not (buffer-file-name)))
@@ -55,7 +72,7 @@ Return the results of all forms as a list."
                                        (if (stringp item)
                                            (replace-regexp-in-string "\\[FILE\\]" file item t)
                                          (if (numberp item) (number-to-string item)
-                                           (error "arguments must be string or number."))))
+                                           (error "Arguments must be string or number"))))
                                    args)
                          (list file)))
          (start (if (use-region-p) (region-beginning) (point-min)))
@@ -78,7 +95,7 @@ Return the results of all forms as a list."
     (pop-to-buffer buffer)
     (insert (format "generated below temp file for execute:\n%s" file))
     (insert (format "\n\nCommand line is:\n%s %s\n\n" execute command-args))
-        ;; to make sparse key map
+    ;; to make sparse key map
     (temp-mode 1)
     ;; Open the temp file in new buffer
     (define-key temp-mode-map (kbd "C-o") `(lambda() (interactive)
@@ -88,6 +105,7 @@ Return the results of all forms as a list."
                                              (kill-this-buffer)
                                              (delete-file ,file)
                                              (winner-undo)))
+    (message "C-d close output and remove temp file. C-o open the temp file.")
     (if (not execute)
         (insert "file contents:\n\n" content)
       ;; only when execute non-nil, start the process
@@ -100,10 +118,14 @@ Return the results of all forms as a list."
     file))
 
 (defun send-to-node (use-default-dir)
+  "Send buffer or region into temp file, pass to node to execute.
+USE-DEFAULT-DIR to using `send-to-execute-default-dir' as folder."
   (interactive "P")
   (send-to-execute "node" nil use-default-dir))
 
 (defun send-to-electron (use-default-dir)
+  "Send buffer or region into temp file, pass to electron to execute.
+USE-DEFAULT-DIR to using `send-to-execute-default-dir' as folder."
   (interactive "P")
   (send-to-execute "electron" nil use-default-dir))
 

@@ -51,9 +51,8 @@ Return the results of all forms as a list."
     (nreverse ret)))
 
 ;;;###autoload
-(defun send-to-execute (&optional execute console-p use-default-dir &rest args)
+(defun send-to-execute (&optional execute use-default-dir &rest args)
   "EXECUTE command by insert current buffer or region into temp file.
-Non-nil CONSOLE-P to run within console.
 Write it into `send-to-execute-default-dir' if USE-DEFAULT-DIR
 or no buffer-file, else write to same dir as buffer-file.
 ARGS will passed to EXECUTE."
@@ -81,10 +80,6 @@ ARGS will passed to EXECUTE."
          ;; make proc execute under the temp path
          (default-directory (file-name-directory file))
          proc name buffer)
-    (when console-p
-      (setq command-args (if execute
-                             (append (list "/k" execute) command-args)))
-      (setq execute "cmd"))
     ;; when execute is nil
     (when (or (not (stringp execute)) (equal execute ""))
       (setq execute nil))
@@ -105,7 +100,7 @@ ARGS will passed to EXECUTE."
                                              (kill-this-buffer)
                                              (delete-file ,file)
                                              (winner-undo)))
-    (message "C-d close output and remove temp file. C-o open the temp file.")
+    (message "C-d: close output and remove temp file.  C-o: open the temp file.")
     (if (not execute)
         (insert "file contents:\n\n" content)
       ;; only when execute non-nil, start the process
@@ -121,13 +116,13 @@ ARGS will passed to EXECUTE."
   "Send buffer or region into temp file, pass to node to execute.
 USE-DEFAULT-DIR to using `send-to-execute-default-dir' as folder."
   (interactive "P")
-  (send-to-execute "node" nil use-default-dir))
+  (send-to-execute "node" use-default-dir))
 
 (defun send-to-electron (use-default-dir)
   "Send buffer or region into temp file, pass to electron to execute.
 USE-DEFAULT-DIR to using `send-to-execute-default-dir' as folder."
   (interactive "P")
-  (send-to-execute "electron" nil use-default-dir))
+  (send-to-execute "electron" use-default-dir))
 
 (global-set-key (kbd "C-c C-b e") 'send-to-execute)
 (global-set-key (kbd "C-c C-b l") 'send-to-electron)

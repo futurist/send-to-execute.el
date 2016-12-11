@@ -27,8 +27,15 @@
 ;;; Code:
 
 ;; make temp-mode-map for each popup buffer
-(load (expand-file-name "temp-mode.el"))
+(defvar send-to-execute-temp-mode-map (make-sparse-keymap)
+  "Keymap while temp-mode is active.")
+(define-minor-mode send-to-execute-temp-mode
+  "A temporary minor mode to be activated only specific to a buffer."
+  nil
+  :lighter " Temp"
+  send-to-execute-temp-mode-map)
 
+;; default dir to save temp file
 (defvar send-to-execute-default-dir temporary-file-directory
   "The default directory to store temporary files.
 Initially set to `temporary-file-directory'")
@@ -91,12 +98,12 @@ ARGS will passed to EXECUTE."
     (insert (format "generated below temp file for execute:\n%s" file))
     (insert (format "\n\nCommand line is:\n%s %s\n\n" execute command-args))
     ;; to make sparse key map
-    (temp-mode 1)
+    (send-to-execute-temp-mode 1)
     ;; Open the temp file in new buffer
-    (define-key temp-mode-map (kbd "C-o") `(lambda() (interactive)
+    (define-key send-to-execute-temp-mode-map (kbd "C-o") `(lambda() (interactive)
                                              (find-file ,file)))
     ;; C-d quickly close the buffer
-    (define-key temp-mode-map (kbd "C-d") `(lambda() (interactive)
+    (define-key send-to-execute-temp-mode-map (kbd "C-d") `(lambda() (interactive)
                                              (kill-this-buffer)
                                              (delete-file ,file)
                                              (winner-undo)))

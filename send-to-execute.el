@@ -101,8 +101,9 @@ ARGS will passed to EXECUTE."
                                                         (winner-undo)))
     (message "C-d: close output and remove temp file.  C-o: open the temp file.")
     (define-minor-mode send-to-execute-mode
-      "Send-to-execute mode."
-      t "Temp" send-to-execute-mode-map)
+      "Send-to-execute mode with temp file."
+      nil "TempExecute" send-to-execute-mode-map)
+    (send-to-execute-mode 1)
     (if (not execute)
         (insert "file contents:\n\n" content)
       ;; only when execute non-nil, start the process

@@ -1,7 +1,7 @@
 ;;; temp-execute.el --- Create temporary file from region or buffer, send it to execute using shell command. -*- lexical-binding: t; -*-
 
 ;; Filename: temp-execute.el
-;; Description: Create temporary file from region or buffer, send it to execute using shell command, popup result and easily dismiss.
+;; Description: Create temporary file from region or buffer, send it to execute using shell command, popup output result and easily dismissed.
 ;; Author: James Yang <jamesyang999@gmail.com>
 ;; Copyright (C) 2016, James Yang, all rights reserved.
 ;; Time-stamp: <2016-12-09 17:37:51 James Yang>
@@ -136,14 +136,12 @@ ARGS will passed to EXECUTE."
     file))
 
 (defun temp-execute-node (use-default-dir)
-  "Send buffer or region into temp file, pass to node to execute.
-USE-DEFAULT-DIR to using `temp-execute-default-dir' as folder."
+  "Run `temp-execute' with node, USE-DEFAULT-DIR is passed as same meaning."
   (interactive "P")
   (temp-execute "node" use-default-dir))
 
 (defun temp-execute-electron (use-default-dir)
-  "Send buffer or region into temp file, pass to electron to execute.
-USE-DEFAULT-DIR to using `temp-execute-default-dir' as folder."
+  "Run `temp-execute' with electron, USE-DEFAULT-DIR is passed as same meaning."
   (interactive "P")
   (temp-execute "electron" use-default-dir))
 

@@ -26,15 +26,6 @@
 
 ;;; Code:
 
-;; make temp-mode-map for each popup buffer
-(defvar send-to-execute-temp-mode-map (make-sparse-keymap)
-  "Keymap while temp-mode is active.")
-(define-minor-mode send-to-execute-temp-mode
-  "A temporary minor mode to be activated only specific to a buffer."
-  nil
-  :lighter " Temp"
-  send-to-execute-temp-mode-map)
-
 ;; default dir to save temp file
 (defvar send-to-execute-default-dir temporary-file-directory
   "The default directory to store temporary files.
@@ -97,17 +88,21 @@ ARGS will passed to EXECUTE."
     (pop-to-buffer buffer)
     (insert (format "generated below temp file for execute:\n%s" file))
     (insert (format "\n\nCommand line is:\n%s %s\n\n" execute command-args))
-    ;; to make sparse key map
-    (send-to-execute-temp-mode 1)
+    ;; make local vars for each popup buffer
+    (setq-local send-to-execute-filename file)
+    (setq-local send-to-execute-mode-map (make-sparse-keymap))
     ;; Open the temp file in new buffer
-    (define-key send-to-execute-temp-mode-map (kbd "C-o") `(lambda() (interactive)
-                                             (find-file ,file)))
+    (define-key send-to-execute-mode-map (kbd "C-o") #'(lambda() (interactive)
+                                                        (find-file send-to-execute-filename)))
     ;; C-d quickly close the buffer
-    (define-key send-to-execute-temp-mode-map (kbd "C-d") `(lambda() (interactive)
-                                             (kill-this-buffer)
-                                             (delete-file ,file)
-                                             (winner-undo)))
+    (define-key send-to-execute-mode-map (kbd "C-d") #'(lambda() (interactive)
+                                                        (delete-file send-to-execute-filename)
+                                                        (kill-this-buffer)
+                                                        (winner-undo)))
     (message "C-d: close output and remove temp file.  C-o: open the temp file.")
+    (define-minor-mode send-to-execute-mode
+      "Send-to-execute mode."
+      t "Temp" send-to-execute-mode-map)
     (if (not execute)
         (insert "file contents:\n\n" content)
       ;; only when execute non-nil, start the process

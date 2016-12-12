@@ -56,7 +56,7 @@ Initially set to `temporary-file-directory'")
                                                     (winner-undo))))
 
 (define-minor-mode temp-execute-mode
-  "Temp-execute mode with temp file."
+  "Temp execute minor mode with temp file."
   :init-value nil
   :lighter " TempExecute"
   :keymap temp-execute-mode-map
@@ -81,10 +81,11 @@ Return the results of all forms as a list."
     (nreverse ret)))
 
 ;;;###autoload
-(defun temp-execute (&optional execute use-default-dir &rest args)
+(defun temp-execute (&optional execute use-default-dir after &rest args)
   "EXECUTE command by insert current buffer or region into temp file.
 Write it into `temp-execute-default-dir' if USE-DEFAULT-DIR
 or no buffer-file, else write to same dir as buffer-file.
+AFTER will be applied with (file dir filebase) as arguments.
 ARGS will passed to EXECUTE."
   (interactive (list (read-from-minibuffer "Program to execute: ")
                      nil current-prefix-arg
@@ -96,10 +97,12 @@ ARGS will passed to EXECUTE."
                                        temp-execute-default-dir
                                      (file-name-directory (buffer-file-name))))
          (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
+         (filebase (file-name-base file))
          (command-args (if args
                            (mapcar #'(lambda(item)
                                        (if (stringp item)
-                                           (replace-regexp-in-string "\\[FILE\\]" file item t)
+                                           (replace-regexp-in-string "\\[FILEBASE\\]" filebase
+                                                                     (replace-regexp-in-string "\\[FILE\\]" file item t) t)
                                          (if (numberp item) (number-to-string item)
                                            (error "Arguments must be string or number"))))
                                    args)
@@ -131,23 +134,38 @@ ARGS will passed to EXECUTE."
                         execute
                         command-args))
       ;; without ask kill process on exit
-      (set-process-query-on-exit-flag proc nil))
+      (set-process-query-on-exit-flag proc nil)
+      (set-process-sentinel proc #'(lambda (proc event)
+                                     (when (eq (process-status proc) 'exit)
+                                       (message "temp execute exit: %s" event)
+                                       (when after
+                                           (insert (apply after (list file default-directory filebase))))))))
     ;; return temp file name
     file))
 
 (defun temp-execute-node (use-default-dir)
-  "Run `temp-execute' with node, USE-DEFAULT-DIR is passed as same meaning."
+  "Run `temp-execute' with node, USE-DEFAULT-DIR is passed as is."
   (interactive "P")
   (temp-execute "node" use-default-dir))
 
 (defun temp-execute-electron (use-default-dir)
-  "Run `temp-execute' with electron, USE-DEFAULT-DIR is passed as same meaning."
+  "Run `temp-execute' with electron, USE-DEFAULT-DIR is passed as is."
   (interactive "P")
   (temp-execute "electron" use-default-dir))
+
+(defun temp-execute-gcc (use-default-dir)
+  "Run `temp-execute' with gcc, USE-DEFAULT-DIR is passed as is."
+  (interactive "P")
+  (temp-execute "gcc" use-default-dir
+                '(lambda(file dir filebase)
+                   (insert "The program result:\n")
+                   (shell-command-to-string (expand-file-name (concat filebase) dir)))
+                "[FILE]" "-o" "[FILEBASE]"))
 
 (global-set-key (kbd "C-c C-b e") 'temp-execute)
 (global-set-key (kbd "C-c C-b l") 'temp-execute-electron)
 (global-set-key (kbd "C-c C-b n") 'temp-execute-node)
+(global-set-key (kbd "C-c C-b g") 'temp-execute-gcc)
 
 (provide 'temp-execute)
 ;;; temp-execute.el ends here

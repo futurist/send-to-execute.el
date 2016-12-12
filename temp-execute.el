@@ -16,18 +16,31 @@
 
 ;;; Commentary:
 
+;; - `temp-execute':
 ;; Create temporary file from region or buffer, send it to execute
 ;; using shell command.  Temp file will be write to
-;; `temp-execute-default-dir' if USE-DEFAULT-DIR is non-nil or no
-;; buffer file, else write to same directory as buffer file.  Popup
-;; output buffer of execute result, with the buffer name as
-;; "execute@temp-file-name".
+;; `temp-execute-default-dir' (default value: `temporary-file-directory')
+;; if USE-DEFAULT-DIR is non-nil or no buffer file,
+;; else write to same directory as buffer file.
+;; AFTER will applied with args (file dir filebase) after execute.
+
+;; Popup output buffer of execute result, with the buffer name as
+;; "[execute]@[temp-file-name]".
 
 ;; Within the buffer, turned on the minor mode `temp-execute-mode',
 ;; with below keys binding to each buffer:
 
-;; C-d to kill the output result buffer, delete the temp file.
+;; C-d to kill the output buffer, delete all the temp files with same file base.
 ;; C-o to open the temp file.
+
+;; - `temp-execute-gcc'
+;; Call `temp-execute' with `gcc [FILE] -o [FILEBASE]`, then run the complied program to show result.
+;;
+;; - `temp-execute-node'
+;; Call `temp-execute' with `node [FILE]`, and show result.
+;;
+;; - `temp-execute-electron'
+;; Call `temp-execute' with `electron [FILE]`, and show result.
 
 ;;; Code:
 (require 'winner)
@@ -52,9 +65,9 @@ Initially set to `temporary-file-directory'")
                                                     "Quickly close the output buffer."
                                                     (interactive)
                                                     (let* ((filebase (file-name-base temp-execute-filename))
-                                                          (dir (file-name-directory temp-execute-filename))
-                                                          (files (directory-files dir t filebase t)))
-                                                      (mapcar #'delete-file files)
+                                                           (dir (file-name-directory temp-execute-filename))
+                                                           (files (directory-files dir t filebase t)))
+                                                      (mapc #'delete-file files)
                                                       (kill-this-buffer)
                                                       (winner-undo)))))
 
@@ -142,7 +155,7 @@ ARGS will passed to EXECUTE."
                                      (when (eq (process-status proc) 'exit)
                                        (message "temp execute exit: %s" event)
                                        (when after
-                                           (insert (apply after (list file default-directory filebase))))))))
+                                         (insert (apply after (list file default-directory filebase))))))))
     ;; return temp file name
     file))
 

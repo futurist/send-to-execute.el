@@ -51,9 +51,12 @@ Initially set to `temporary-file-directory'")
   (define-key temp-execute-mode-map (kbd "C-d") #'(lambda()
                                                     "Quickly close the output buffer."
                                                     (interactive)
-                                                    (delete-file temp-execute-filename)
-                                                    (kill-this-buffer)
-                                                    (winner-undo))))
+                                                    (let* ((filebase (file-name-base temp-execute-filename))
+                                                          (dir (file-name-directory temp-execute-filename))
+                                                          (files (directory-files dir t filebase t)))
+                                                      (mapcar #'delete-file files)
+                                                      (kill-this-buffer)
+                                                      (winner-undo)))))
 
 (define-minor-mode temp-execute-mode
   "Temp execute minor mode with temp file."

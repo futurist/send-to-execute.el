@@ -81,6 +81,7 @@ Initially set to `temporary-file-directory'")
 
 ;; eval input string as args list
 ;; http://emacs.stackexchange.com/questions/19877/how-to-evaluate-elisp-code-contained-in-a-string
+;; by @Tobias and @npostavs
 (defun temp-execute-eval-string (str)
   "Read and evaluate all forms in STR.
 Return the results of all forms as a list."

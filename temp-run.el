@@ -24,8 +24,8 @@
 ;; else write to same directory as buffer file.
 ;; AFTER will applied with args (file dir filebase) after execute.
 
-;; Popup output buffer of execute result, with the buffer name as
-;; "[execute]@[temp-file-name]".
+;; Popup output buffer of run result, with the buffer name as
+;; "[run]@[temp-file-name]".
 
 ;; Within the buffer, turned on the minor mode `temp-run-mode',
 ;; with below keys binding to each buffer:
@@ -72,9 +72,9 @@ Initially set to `temporary-file-directory'")
                                                       (winner-undo)))))
 
 (define-minor-mode temp-run-mode
-  "Temp execute minor mode with temp file."
+  "Temp run minor mode with temp file."
   :init-value nil
-  :lighter " TempExecute"
+  :lighter " TempRun"
   :keymap temp-run-mode-map
   (when temp-run-mode
     (message "C-d: close output and remove temp file.  C-o: open the temp file.")))
@@ -104,7 +104,7 @@ Write it into `temp-run-default-dir' if USE-DEFAULT-DIR
 or no buffer-file, else write to same dir as buffer-file.
 AFTER will be applied with (file dir filebase) as arguments.
 ARGS will passed to EXECUTE."
-  (interactive (list (read-from-minibuffer "Program to execute: ")
+  (interactive (list (read-from-minibuffer "Program to run: ")
                      nil current-prefix-arg
                      (temp-run-eval-string (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\""))))
   (when (and args (called-interactively-p 'any))
@@ -138,7 +138,7 @@ ARGS will passed to EXECUTE."
                        (file-name-nondirectory file) "*"))
     (setq buffer (create-file-buffer name))
     (pop-to-buffer buffer)
-    (insert (format "generated below temp file for execute:\n%s" file))
+    (insert (format "generated below temp file for run:\n%s" file))
     (insert (format "\n\nCommand line is:\n%s %s\n\n" execute command-args))
     ;; save filename local vars for each popup buffer
     (setq temp-run-filename file)
@@ -154,7 +154,7 @@ ARGS will passed to EXECUTE."
       (set-process-query-on-exit-flag proc nil)
       (set-process-sentinel proc #'(lambda (proc event)
                                      (when (eq (process-status proc) 'exit)
-                                       (message "temp execute exit: %s" event)
+                                       (message "temp run exit: %s" event)
                                        (when after
                                          (insert (apply after (list file default-directory filebase))))))))
     ;; return temp file name

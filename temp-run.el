@@ -109,11 +109,13 @@ ARGS will passed to EXECUTE."
                      (temp-run-eval-string (read-string "Arguments (quote each item, `[FILE]` as placeholder): " "\"[FILE]\""))))
   (when (and args (called-interactively-p 'any))
     (setq args (car args)))
-  (let* ((buffer-name (buffer-file-name))
-         (temporary-file-directory (if (or use-default-dir (not (buffer-file-name)))
+  (let* ((filename (buffer-file-name))
+         (temporary-file-directory (if (or use-default-dir
+                                           (not filename)
+                                           (file-remote-p filename))
                                        temp-run-default-dir
-                                     (file-name-directory (buffer-file-name))))
-         (file (make-temp-file execute nil (when buffer-name (file-name-extension buffer-name t))))
+                                     (file-name-directory filename)))
+         (file (make-temp-file execute nil (when filename (file-name-extension filename t))))
          (filebase (file-name-base file))
          (command-args (if args
                            (mapcar #'(lambda(item)

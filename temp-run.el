@@ -181,10 +181,20 @@ ARGS will passed to EXECUTE."
                    (shell-command-to-string (expand-file-name (concat filebase) dir)))
                 "[FILE]" "-o" "[FILEBASE]"))
 
+(defun temp-run-rust (use-default-dir)
+  "Run `temp-run' with gcc, USE-DEFAULT-DIR is passed as is."
+  (interactive "P")
+  (temp-run "rust" use-default-dir
+                '(lambda(file dir filebase)
+                   (insert "The program result:\n")
+                   (shell-command-to-string (expand-file-name (concat filebase) dir)))
+                "[FILE]"))
+
 (global-set-key (kbd "C-c C-b e") 'temp-run)
 (global-set-key (kbd "C-c C-b l") 'temp-run-electron)
 (global-set-key (kbd "C-c C-b n") 'temp-run-node)
 (global-set-key (kbd "C-c C-b g") 'temp-run-gcc)
+(global-set-key (kbd "C-c C-b r") 'temp-run-rust)
 
 (provide 'temp-run)
 ;;; temp-run.el ends here
